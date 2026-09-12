@@ -6,16 +6,33 @@ class Program
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-        Console.Write("Nhập số a: ");
-        double a = Convert.ToDouble(Console.ReadLine());
+        int a, b, c;
 
-        Console.Write("Nhập số b: ");
-        double b = Convert.ToDouble(Console.ReadLine());
+        while (true)
+        {
+            Console.Write("Nhập số a: ");
+            if (int.TryParse(Console.ReadLine(), out a))
+                break;
+            Console.WriteLine("Nhập sai, vui lòng nhập lại một số nguyên hợp lệ!");
+        }
 
-        Console.Write("Nhập số c: ");
-        double c = Convert.ToDouble(Console.ReadLine());
+        while (true)
+        {
+            Console.Write("Nhập số b: ");
+            if (int.TryParse(Console.ReadLine(), out b))
+                break;
+            Console.WriteLine("Nhập sai, vui lòng nhập lại một số nguyên hợp lệ!");
+        }
 
-        double tong = a + b + c;
+        while (true)
+        {
+            Console.Write("Nhập số c: ");
+            if (int.TryParse(Console.ReadLine(), out c))
+                break;
+            Console.WriteLine("Nhập sai, vui lòng nhập lại một số nguyên hợp lệ!");
+        }
+
+        int tong = a + b + c;
         Console.WriteLine($"Tổng của 3 số {a} + {b} + {c} = {tong}");
     }
 }
