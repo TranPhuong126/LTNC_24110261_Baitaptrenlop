@@ -12,3 +12,4 @@ D:\LTNC\ProjectCongSo\obj\Debug\net10.0\refint\ProjectCongSo.dll
 D:\LTNC\ProjectCongSo\obj\Debug\net10.0\ProjectCongSo.pdb
 D:\LTNC\ProjectCongSo\obj\Debug\net10.0\ProjectCongSo.genruntimeconfig.cache
 D:\LTNC\ProjectCongSo\obj\Debug\net10.0\ref\ProjectCongSo.dll
+D:\LTNC\ProjectCongSo\obj\Debug\net10.0\ProjectCongSo.sourcelink.json
