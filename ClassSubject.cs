@@ -1,33 +1,83 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace QuanLySinhVien
 {
     public class ClassSubject
     {
-        public string SubjectID { get; set; }
+        public string SubID { get; set; }
         public string Name { get; set; }
-        public string HocKi { get; set; }
+        public int Credit { get; set; }
         public string Teacher { get; set; }
-        
-        // Danh sách sinh viên thuộc lớp học phần này
-        public List<Student> ListSTU { get; set; } = new List<Student>();
+        public List<Student> Students { get; set; }
 
-        // Thêm sinh viên vào lớp
-        public void AddStudent(Student student)
+        public ClassSubject()
         {
-            ListSTU.Add(student);
+            Students = new List<Student>
+            {
+                new Student { StuID = "S001", Name = "Nguyen Van A", MidPoint = 8.5, FinalPoint = 9.0, Email = "nguyenvana@example.com" },
+                new Student { StuID = "S002", Name = "Tran Thi B", MidPoint = 7.0, FinalPoint = 8.0, Email = "tranthib@example.com" },
+                new Student { StuID = "S003", Name = "Le Van C", MidPoint = 6.5, FinalPoint = 7.0, Email = "levanc@example.com" },
+                new Student { StuID = "S004", Name = "Pham Thi D", MidPoint = 9.0, FinalPoint = 9.5, Email = "phamthid@example.com" }
+            };
         }
 
-        public void DisplaySubjectInfo()
+        public List<Student> GetStudents() => Students;
+
+        public void AddStudent(Student student)
         {
-            Console.WriteLine($"\n--- Lớp học phần: {Name} ({SubjectID}) ---");
-            Console.WriteLine($"Học kỳ: {HocKi} | Giảng viên: {Teacher}");
-            Console.WriteLine("Danh sách sinh viên trong lớp:");
-            foreach (var stu in ListSTU)
+            Students.Add(student);
+        }
+
+        public void RemoveStudent(string stuID)
+        {
+            Students.RemoveAll(s => s.StuID == stuID);
+        }
+
+        public void UpdateStudent(string stuID, Student updatedStudent)
+        {
+            var studentToUpdate = Students.FirstOrDefault(s => s.StuID == stuID);
+            if (studentToUpdate != null)
             {
-                stu.DisplayInfo();
+                studentToUpdate.Name = updatedStudent.Name;
+                studentToUpdate.MidPoint = updatedStudent.MidPoint;
+                studentToUpdate.FinalPoint = updatedStudent.FinalPoint;
+                studentToUpdate.Email = updatedStudent.Email;
             }
+        }
+
+        public Student GetStudentById(string stuID)
+        {
+            return Students.FirstOrDefault(s => s.StuID == stuID);
+        }
+
+        public List<Student> GetStudentsByName(string name)
+        {
+            return Students.Where(s => s.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        public List<Student> getStudentsPassed(double passCondition)
+        {
+            return Students.Where(s => s.getSubjectPoint() >= passCondition).ToList();
+        }
+
+        public List<Student> getStudentsFailed(double passCondition)
+        {
+            return Students.Where(s => s.getSubjectPoint() < passCondition).ToList();
+        }
+
+        public List<Student> getStudentsMidPointPlus1()
+        {
+            return Students.Select(s => new Student
+            {
+                StuID = s.StuID,
+                Name = s.Name,
+                MidPoint = s.MidPoint + 1,
+                FinalPoint = s.FinalPoint,
+                Email = s.Email
+            }).ToList();
         }
     }
 }

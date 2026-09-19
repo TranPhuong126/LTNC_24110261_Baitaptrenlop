@@ -1,0 +1,14 @@
+D:\LTNC\QuanliSV\obj\Debug\net10.0\QuanliSV.GeneratedMSBuildEditorConfig.editorconfig
+D:\LTNC\QuanliSV\obj\Debug\net10.0\QuanliSV.AssemblyInfoInputs.cache
+D:\LTNC\QuanliSV\obj\Debug\net10.0\QuanliSV.AssemblyInfo.cs
+D:\LTNC\QuanliSV\obj\Debug\net10.0\QuanliSV.csproj.CoreCompileInputs.cache
+D:\LTNC\QuanliSV\bin\Debug\net10.0\QuanliSV.exe
+D:\LTNC\QuanliSV\bin\Debug\net10.0\QuanliSV.deps.json
+D:\LTNC\QuanliSV\bin\Debug\net10.0\QuanliSV.runtimeconfig.json
+D:\LTNC\QuanliSV\bin\Debug\net10.0\QuanliSV.dll
+D:\LTNC\QuanliSV\bin\Debug\net10.0\QuanliSV.pdb
+D:\LTNC\QuanliSV\obj\Debug\net10.0\QuanliSV.dll
+D:\LTNC\QuanliSV\obj\Debug\net10.0\refint\QuanliSV.dll
+D:\LTNC\QuanliSV\obj\Debug\net10.0\QuanliSV.pdb
+D:\LTNC\QuanliSV\obj\Debug\net10.0\QuanliSV.genruntimeconfig.cache
+D:\LTNC\QuanliSV\obj\Debug\net10.0\ref\QuanliSV.dll
