@@ -57,20 +57,21 @@ namespace ProjectQLsinhvien.Entity
 
         /// <summary>
         /// Trả về DANH SÁCH LỖI (rỗng nếu hợp lệ).
+        /// Mỗi lỗi kèm TÊN TRƯỜNG (ValidationResult.MemberNames) để Views
+        /// gắn ErrorProvider đúng vào điều khiển tương ứng.
         /// Nguyên tắc: Data Annotation chạy trước, cộng thêm quy tắc đặc thù.
-        /// Đây là API mà tầng BUL (SinhVienBUL.AddSinhVien) đang gọi.
+        /// Đây là API mà tầng BUL (SinhVienBUL.ThemSinhVien) đang gọi.
         /// </summary>
-        public List<string> IsInValid()
+        public List<ValidationResult> IsInValid()
         {
             // 1. Chạy toàn bộ Data Annotation qua Validator.TryValidateObject
-            List<string> loi = KiemTraDuLieu.DanhSachLoi(this);
+            List<ValidationResult> loi = KiemTraDuLieu.KiemTra(this);
 
             // 2. Các quy tắc không biểu diễn được bằng Attribute
             if (NgaySinh > DateTime.Today)
-                loi.Add("Ngày sinh không được là ngày trong tương lai.");
-
-            if (string.IsNullOrWhiteSpace(MaSV))
-                loi.Add("Mã sinh viên không được chỉ chứa khoảng trắng.");
+                loi.Add(new ValidationResult(
+                    "Ngày sinh không được là ngày trong tương lai.",
+                    new[] { nameof(NgaySinh) }));
 
             return loi;
         }
@@ -78,8 +79,16 @@ namespace ProjectQLsinhvien.Entity
         /// <summary>Biến thể bool + chuỗi thông báo (dùng cho MessageBox).</summary>
         public bool KiemTraHopLe(out string thongBao)
         {
-            List<string> loi = IsInValid();
-            thongBao = string.Join(System.Environment.NewLine, loi.ConvertAll(l => "- " + l));
+            List<ValidationResult> loi = IsInValid();
+            thongBao = string.Join(System.Environment.NewLine,
+                                   loi.ConvertAll(l => "- " + l.ErrorMessage));
+            return loi.Count == 0;
+        }
+
+        /// <summary>Biến thể bool + danh sách lỗi chi tiết (dùng cho ErrorProvider).</summary>
+        public bool KiemTraHopLe(out List<ValidationResult> loi)
+        {
+            loi = IsInValid();
             return loi.Count == 0;
         }
     }

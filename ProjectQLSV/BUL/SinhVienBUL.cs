@@ -1,124 +1,125 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using ProjectQLsinhvien.Data.DAL;
+using System.ComponentModel.DataAnnotations;
+using ProjectQLsinhvien.Common;
+using ProjectQLsinhvien.Data.DAO;
 using ProjectQLsinhvien.Entity;
+using ValidationException = ProjectQLsinhvien.Common.ValidationException;
 
 namespace ProjectQLsinhvien.BUL
 {
     /// <summary>
     /// TẦNG BUL (Business Logic Layer) – NGHIỆP VỤ SINH VIÊN.
-    /// Nhận dữ liệu từ Form (Views) → kiểm tra nghiệp vụ → gọi SinhVienDAL1 ghi.
-    /// Ném Exception khi vi phạm để Form bắt và hiện MessageBox.
+    /// Nhận yêu cầu từ Views → kiểm tra nghiệp vụ → gọi SinhVienDAO
+    /// để đọc/ghi cơ sở dữ liệu MySQL.
+    /// Mọi trường hợp sai đều NÉM NGOẠI LỆ để Views bắt và hiển thị:
+    ///     + ValidationException → lỗi dữ liệu (Views gắn ErrorProvider từng trường)
+    ///     + BusinessException  → lỗi nghiệp vụ (Views hiện MessageBox)
+    ///     + DataAccessException → lỗi truy vấn MySQL (Views hiện MessageBox)
     /// </summary>
     public class SinhVienBUL
     {
-        private readonly SinhVienDAL1 svd;
+        private readonly SinhVienDAO svDAO = new SinhVienDAO();
 
-        /// <summary>Dùng để kiểm tra lớp có tồn tại (quan hệ 1 - nhiều).</summary>
-        private readonly LopBus lopBus;
+        // ===== Views gọi các hàm này =====
 
-        public SinhVienBUL()
-        {
-            svd = new SinhVienDAL1();
-            lopBus = new LopBus();
-        }
-
-        // ===== Form gọi các hàm này =====
-
-        /// <summary>Lấy toàn bộ sinh viên (nạp dataGridView1).</summary>
+        /// <summary>Lấy toàn bộ sinh viên (nạp dataGridView).</summary>
         public List<SinhVien> GetAllSinhVien()
         {
-            return svd.GetAllSinhVien();
+            return svDAO.GetAllSinhVien();
+        }
+
+        /// <summary>Lấy danh sách sinh viên CỦA MỘT LỚP – dùng khi chọn lớp trên comboBox.</summary>
+        public List<SinhVien> GetSinhVienByMaLop(string maLop)
+        {
+            if (string.IsNullOrWhiteSpace(maLop))
+                throw new BusinessException("Vui lòng chọn lớp cần xem danh sách.");
+
+            return svDAO.GetSinhVienByMaLop(maLop);
         }
 
         /// <summary>Tra cứu sinh viên theo mã – trả null nếu không tồn tại.
         /// Dùng cho Task 4 (nhập/rời ô Mã sinh viên).</summary>
-        public SinhVien? GetSinhVienById(string maSV)
+        public SinhVien? GetSinhVienByMaSV(string maSV)
         {
-            return svd.GetSinhVienById(maSV);
+            return svDAO.GetSinhVienByMaSV(maSV);
         }
 
-        /// <summary>Kiểm tra mã sinh viên đã tồn tại (Task 4).</summary>
+        /// <summary>Kiểm tra mã sinh viên đã tồn tại trong CSDL chưa.</summary>
         public bool KiemTraTonTai(string maSV)
         {
-            return svd.IsExist(maSV);
+            return svDAO.IsExist(maSV);
+        }
+
+        /// <summary>
+        /// TÌM KIẾM PHÍA CƠ SỞ DỮ LIỆU: từ khóa, lớp, điểm tối thiểu được gửi
+        /// xuống MySQL qua WHERE (parameter), CSDL trả về đúng kết quả phù hợp.
+        /// </summary>
+        public List<SinhVien> TimKiem(string tuKhoa, string maLop, double diemToiThieu)
+        {
+            if (diemToiThieu < 0 || diemToiThieu > 10)
+                throw new BusinessException("Điểm tối thiểu phải nằm trong khoảng từ 0 đến 10.");
+
+            return svDAO.TimKiemSinhVien(tuKhoa ?? string.Empty, maLop ?? string.Empty, diemToiThieu);
         }
 
         /// <summary>
         /// THÊM sinh viên:
-        /// Validate (Entity) → Chống trùng mã (Business) → Ghi (DAL).
+        /// Validate (Entity) → Chống trùng mã (Business) → Lớp phải tồn tại → Ghi (DAL).
         /// </summary>
         public void ThemSinhVien(SinhVien sv)
         {
             // 1. Rule nghiệp vụ 1: dữ liệu hợp lệ theo Data Annotation của Entity
-            if (sv.IsInValid().Count > 0)
-            {
-                List<string> loi = sv.IsInValid();
-                throw new Exception("Sinh viên không hợp lệ:\n" +
-                                    string.Join("\n", loi.ConvertAll(l => "- " + l)));
-            }
+            List<ValidationResult> loi = sv.IsInValid();
+            if (loi.Count > 0)
+                throw new ValidationException(loi);
 
             // 2. Rule nghiệp vụ 2: không được trùng mã sinh viên
-            if (svd.GetSinhVienById(sv.MaSV) != null)
-            {
-                throw new Exception("Mã sinh viên đã tồn tại");
-            }
+            if (svDAO.IsExist(sv.MaSV))
+                throw new BusinessException("Mã sinh viên \"" + sv.MaSV + "\" đã tồn tại.");
 
             // 3. Rule nghiệp vụ 3 (quan hệ 1 - nhiều): lớp phải tồn tại
-            if (lopBus.GetLopById(sv.MaLop) == null)
-            {
-                throw new Exception("Lớp học có mã \"" + sv.MaLop + "\" không tồn tại.");
-            }
+            if (!KiemTraLopTonTai(sv.MaLop))
+                throw new BusinessException("Lớp học có mã \"" + sv.MaLop + "\" không tồn tại.");
 
             // 4. Ghi xuống DAL
-            svd.AddSinhVien(sv);
+            svDAO.InsertSinhVien(sv);
         }
 
-        /// <summary>CẬP NHẬT sinh viên (Form sẽ hiện hộp thoại YesNo trước khi gọi).</summary>
+        /// <summary>CẬP NHẬT sinh viên (Views sẽ hiện hộp thoại YesNo trước khi gọi).</summary>
         public void CapNhatSinhVien(SinhVien sv)
         {
-            List<string> loi = sv.IsInValid();
+            List<ValidationResult> loi = sv.IsInValid();
             if (loi.Count > 0)
-                throw new Exception("Sinh viên không hợp lệ:\n" +
-                                    string.Join("\n", loi.ConvertAll(l => "- " + l)));
+                throw new ValidationException(loi);
 
-            if (!svd.IsExist(sv.MaSV))
-                throw new Exception("Không tìm thấy sinh viên có mã \"" + sv.MaSV + "\".");
+            if (!svDAO.IsExist(sv.MaSV))
+                throw new BusinessException("Không tìm thấy sinh viên có mã \"" + sv.MaSV + "\".");
 
-            if (lopBus.GetLopById(sv.MaLop) == null)
-                throw new Exception("Lớp học có mã \"" + sv.MaLop + "\" không tồn tại.");
+            if (!KiemTraLopTonTai(sv.MaLop))
+                throw new BusinessException("Lớp học có mã \"" + sv.MaLop + "\" không tồn tại.");
 
-            if (!svd.UpdateSinhVien(sv))
-                throw new Exception("Cập nhật thất bại, vui lòng thử lại.");
+            if (!svDAO.UpdateSinhVien(sv))
+                throw new BusinessException("Cập nhật sinh viên thất bại, vui lòng thử lại.");
         }
 
-        /// <summary>XÓA sinh viên theo mã (Form sẽ hiện hộp thoại YesNo trước khi gọi).</summary>
+        /// <summary>XÓA sinh viên theo mã (Views sẽ hiện hộp thoại YesNo trước khi gọi).</summary>
         public void XoaSinhVien(string maSV)
         {
-            if (!svd.IsExist(maSV))
-                throw new Exception("Không tìm thấy sinh viên có mã \"" + maSV + "\".");
+            if (!svDAO.IsExist(maSV))
+                throw new BusinessException("Không tìm thấy sinh viên có mã \"" + maSV + "\".");
 
-            if (!svd.DeleteSinhVien(maSV))
-                throw new Exception("Xóa thất bại, vui lòng thử lại.");
+            if (!svDAO.DeleteSinhVien(maSV))
+                throw new BusinessException("Xóa sinh viên thất bại, vui lòng thử lại.");
         }
 
-        /// <summary>
-        /// TÌM KIẾM: rule lọc dữ liệu – nằm ở BUL vì đây là nghiệp vụ,
-        /// Form chỉ truyền từ khóa vào rồi nhận danh sách về.
-        /// </summary>
-        public List<SinhVien> TimKiem(string tuKhoa, string? maLop, double diemToiThieu)
-        {
-            string tk = (tuKhoa ?? string.Empty).Trim().ToLower();
+        // ==================== HỖ TRỢ NGHIỆP VỤ ====================
 
-            return svd.GetAllSinhVien().Where(sv =>
-                    (tk.Length == 0 ||
-                     (sv.MaSV ?? string.Empty).ToLower().Contains(tk) ||
-                     (sv.HoTen ?? string.Empty).ToLower().Contains(tk) ||
-                     (sv.Email ?? string.Empty).ToLower().Contains(tk))
-                    && (string.IsNullOrEmpty(maLop) || sv.MaLop == maLop)
-                    && sv.Diem >= diemToiThieu)
-                .ToList();
+        /// <summary>Kiểm tra lớp có tồn tại không (quan hệ 1 - nhiều) – nhờ LopBUL.</summary>
+        private bool KiemTraLopTonTai(string maLop)
+        {
+            if (string.IsNullOrWhiteSpace(maLop)) return false;
+            return new LopBUL().KiemTraTonTai(maLop);
         }
     }
 }

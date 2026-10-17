@@ -30,19 +30,27 @@ namespace ProjectQLsinhvien.Entity
         public override string ToString() => TenLop;
 
         /// <summary>
-        /// Trả về DANH SÁCH LỖI (rỗng nếu hợp lệ).
-        /// Đây là API mà tầng BUL (LopBus / SinhVienBUL) đang gọi.
+        /// Trả về DANH SÁCH LỖI kèm TÊN TRƯỜNG (rỗng nếu hợp lệ).
+        /// Đây là API mà tầng BUL (LopBUL / SinhVienBUL) đang gọi.
         /// </summary>
-        public List<string> IsInValid()
+        public List<ValidationResult> IsInValid()
         {
-            return KiemTraDuLieu.DanhSachLoi(this);
+            return KiemTraDuLieu.KiemTra(this);
         }
 
         /// <summary>Biến thể bool + chuỗi thông báo (dùng cho MessageBox).</summary>
         public bool KiemTraHopLe(out string thongBao)
         {
-            List<string> loi = IsInValid();
-            thongBao = string.Join(System.Environment.NewLine, loi.ConvertAll(l => "- " + l));
+            List<ValidationResult> loi = IsInValid();
+            thongBao = string.Join(System.Environment.NewLine,
+                                   loi.ConvertAll(l => "- " + l.ErrorMessage));
+            return loi.Count == 0;
+        }
+
+        /// <summary>Biến thể bool + danh sách lỗi chi tiết (dùng cho ErrorProvider).</summary>
+        public bool KiemTraHopLe(out List<ValidationResult> loi)
+        {
+            loi = IsInValid();
             return loi.Count == 0;
         }
     }
